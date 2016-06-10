@@ -1,0 +1,5 @@
+hooks:
+- match: ".*"
+  url: "http://localhost:8000/loqi.php"
+- match: "^ping$"
+  url: "http://localhost:8000/ping.php"
