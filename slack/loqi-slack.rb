@@ -79,7 +79,7 @@ $client.on :message do |data|
       next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, "#{$client.team.domain}.slack.com")
 
       # Check if the text matched
-      if match=Regexp.new(hook['match']).match(data.text)
+      if match=Gateway.text_match(hook, data.text)
         puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
         puts match.captures.inspect
 
@@ -121,7 +121,7 @@ $client.on :message do |data|
             nick: ($users[data.user] ? $users[data.user].name : data.user),
             text: text,
             match: match.captures,
-            response_url: "http://localhost:4567/message?channel=#{data.channel}"
+            response_url: "http://localhost:#{$config['api']['port']}/message?channel=#{URI.encode_www_form_component(data.channel)}"
           }
 
           #puts "Posting to #{hook['url']}"

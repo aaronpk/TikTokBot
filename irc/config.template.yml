@@ -1,4 +1,5 @@
 irc:
+  network: freenode
   server: localhost
   port: 6667
   password:

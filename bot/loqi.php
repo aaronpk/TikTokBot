@@ -34,7 +34,7 @@ class Message {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($params));
     $response = curl_exec($ch);
-    echo $response."\n";
+    #echo $response."\n";
   }
 }
 
@@ -79,3 +79,6 @@ if(preg_match('/^@?([a-zA-Z0-9_-]*[a-zA-Z]+[a-zA-Z0-9_]*)(\+\+|--)/', $msg->text
 }
 
 $msg->reply("Nothing matched");
+
+// header('Content-type: application/json');
+// echo json_encode(['text'=>'Nothing Matched']);

@@ -27,7 +27,7 @@ end
 
 $client = Cinch::Bot.new do
   configure do |c|
-    c.server = $config['irc']['server']
+    c.server = $config['irc']['host']
     c.port = $config['irc']['port']
     c.password = $config['irc']['password']
     c.nick = $config['irc']['nick']
@@ -42,10 +42,51 @@ $client = Cinch::Bot.new do
     hooks = Gateway.load_hooks
 
     hooks['hooks'].each do |hook|
-      
+      next if !Gateway.channel_match(hook, data.channel.name, $config['irc']['server'])
 
+      if match=Gateway.text_match(hook, data.message)
+        puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
+        puts match.captures.inspect
+
+        # Post to the hook URL in a separate thread
+        Thread.new do
+          params = {
+            network: 'irc',
+            server: $config['irc']['server'],
+            channel: data.channel.name,
+            timestamp: Time.now.to_f,
+            type: data.command,
+            user: data.user,
+            nick: data.user.nick,
+            text: data.message,
+            match: match.captures,
+            response_url: "http://localhost:#{$config['api']['port']}/message?channel=#{URI.encode_www_form_component(data.channel.name)}"
+          }
+
+          #puts "Posting to #{hook['url']}"
+          jj params
+
+          response = HTTParty.post hook['url'], {
+            body: params,
+            headers: {
+              'Authorization' => "Bearer #{$config['webhook_token']}"
+            }
+          }
+              puts response.inspect
+          if response.parsed_response.is_a? Hash
+            puts response.parsed_response
+            $gateway.send_to_irc({channel: data.channel.name}.merge response.parsed_response)
+          else
+            if !response.parsed_response.nil?
+              puts response.inspect
+            end
+          end
+
+        end
+
+      end
     end
-    
+
   end
 end
 

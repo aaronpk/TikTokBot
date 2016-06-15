@@ -35,4 +35,8 @@ class Gateway
     end
   end    
 
+  def self.text_match(hook, text)
+    Regexp.new(hook['match']).match(text)
+  end    
+
 end
