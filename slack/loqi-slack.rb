@@ -1,5 +1,6 @@
 Bundler.require
 require 'yaml'
+require '../lib/gateway'
 
 $config = YAML.load_file 'config.yml'
 
@@ -8,22 +9,20 @@ Slack.configure do |config|
 end
 
 $users = {}
+$nicks = {}
+$channels = {}
 
 $client = Slack::RealTime::Client.new
 
+$gateway = Gateway.new
+
 $first = true
-
-class Bot
-
-  def incoming(params)
-    $client.message channel: params[:channel], text: (params[:text] || params['text'])
-  end
-
-end
 
 class API < Sinatra::Base
   configure do
     set :threaded, false
+    set :bind, $config['api']['host']
+    set :port, $config['api']['port']
   end
 
   get '/' do
@@ -36,7 +35,8 @@ class API < Sinatra::Base
 
   post '/message' do
     puts params.inspect
-    $bot.incoming params
+    $gateway.send_to_slack params
+    "sent"
   end
 end
 
@@ -54,15 +54,39 @@ $client.on :message do |data|
     puts "================="
     puts data.inspect
 
-    hooks = YAML.load_file 'hooks.yml'
+    hooks = Gateway.load_hooks
 
     hooks['hooks'].each do |hook|
-      if Regexp.new(hook['match']).match data.text
+
+      # Map Slack IDs to names used in configs and things
+      if $channels[data.channel].nil?
+        # The channel might actually be a group ID or DM ID
+        if data.channel[0] == "G"
+          puts "Fetching group info: #{data.channel}"
+          $channels[data.channel] = $client.web_client.groups_info(channel: data.channel).group
+          $channels[data.channel].name = "##{$channels[data.channel].name}"
+        elsif data.channel[0] == "D"
+          $channels[data.channel] = $client.web_client.users_info(user: data.user).user
+          puts "Private message from #{$channels[data.channel].name}"
+        elsif data.channel[0] == "C"
+          puts "Fetching channel info: #{data.channel}"
+          $channels[data.channel] = $client.web_client.channels_info(channel: data.channel).channel
+          $channels[data.channel].name = "##{$channels[data.channel].name}"
+        end
+      end
+
+      # First check if there is a channel restriction on the hook
+      next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, "#{$client.team.domain}.slack.com")
+
+      # Check if the text matched
+      if match=Regexp.new(hook['match']).match(data.text)
         puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
+        puts match.captures.inspect
 
         if $users[data.user].nil?
           puts "Fetching account info: #{data.user}"
-          $users[data.user] = $client.web_client.users_info(user: data.user)
+          $users[data.user] = $client.web_client.users_info(user: data.user).user
+          $nicks[$users[data.user].name] = $users[data.user]
         end
 
         # If the message is a normal message, then there might be occurrences of "<@xxxxxxxx>" in the text, which need to get replaced
@@ -90,15 +114,17 @@ $client.on :message do |data|
           params = {
             network: 'slack',
             server: "#{$client.team.domain}.slack.com",
-            channel: data.channel,
+            channel: ($channels[data.channel] ? $channels[data.channel].name : data.channel),
             timestamp: data.ts,
             type: data.type,
             user: data.user,
-            nick: $users[data.user].user.name,
+            nick: ($users[data.user] ? $users[data.user].name : data.user),
             text: text,
+            match: match.captures,
             response_url: "http://localhost:4567/message?channel=#{data.channel}"
           }
 
+          #puts "Posting to #{hook['url']}"
           jj params
 
           response = HTTParty.post hook['url'], {
@@ -109,7 +135,7 @@ $client.on :message do |data|
           }
           if response.parsed_response.is_a? Hash
             puts response.parsed_response
-            $bot.incoming({channel: data.channel}.merge response.parsed_response)
+            $gateway.send_to_slack({channel: data.channel}.merge response.parsed_response)
           else
             if !response.parsed_response.nil?
               puts response.inspect
@@ -130,11 +156,9 @@ $client.on :closed do |_data|
   puts "Client has disconnected successfully!"
 end
 
-$bot = Bot.new
-
+# Start the Slack client
 $client.start_async
 
-#t = Thread.new do
+# Start the HTTP API
 API.run!
-#end
-#t.join
+
