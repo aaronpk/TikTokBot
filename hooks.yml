@@ -1,0 +1,21 @@
+hooks:
+# - match: ".*"
+#   url: "http://localhost:8000/loqi.php"
+- match: "^ping$"
+  url: "http://localhost:8000/ping.php"
+  token: gh7361cukenncyy313
+- match: "^!alpha ([^ ]+) ([^ ]+)"
+  url: "http://localhost:8000/alpha.php"
+  token: gh7361cukenncyy313
+- channels:
+  - "#indiewebcamp@freenode"
+  - "#test@localhost"
+  - "#random@squashreports.slack.com"
+  match: ".*"
+  url: "http://localhost:8000/indiewebcamp.php"
+  token: gh7361cukenncyy313
+- channels:
+  - "aaronpk@squashreports.slack.com"
+  match: ".*"
+  url: "http://localhost:8000/aaronpk.php"
+  token: gh7361cukenncyy313

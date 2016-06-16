@@ -1,11 +1,11 @@
 source 'https://rubygems.org/'
 
 gem 'slack-ruby-client'
-# gem 'eventmachine'
-# gem 'faye-websocket'
+gem 'cinch'
 
 gem 'celluloid-io', require: ['celluloid/current', 'celluloid/io']
 
 gem 'sinatra', :require => 'sinatra/base'
 gem 'puma'
 gem 'httparty'
+

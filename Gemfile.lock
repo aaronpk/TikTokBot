@@ -28,6 +28,7 @@ GEM
       timers (>= 4.1.1)
     celluloid-supervision (0.20.5)
       timers (>= 4.1.1)
+    cinch (2.3.2)
     faraday (0.9.2)
       multipart-post (>= 1.2, < 3)
     faraday_middleware (0.10.0)
@@ -35,17 +36,16 @@ GEM
     gli (2.14.0)
     hashie (3.4.4)
     hitimes (1.2.4)
-    httparty (0.11.0)
-      multi_json (~> 1.0)
+    httparty (0.13.7)
+      json (~> 1.8)
       multi_xml (>= 0.5.2)
     i18n (0.7.0)
     json (1.8.3)
     minitest (5.9.0)
-    multi_json (1.12.1)
     multi_xml (0.5.5)
     multipart-post (2.0.0)
     nio4r (1.2.1)
-    puma (2.12.3)
+    puma (3.4.0)
     rack (1.6.4)
     rack-protection (1.5.3)
       rack
@@ -76,6 +76,7 @@ PLATFORMS
 
 DEPENDENCIES
   celluloid-io
+  cinch
   httparty
   puma
   sinatra

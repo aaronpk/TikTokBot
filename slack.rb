@@ -1,8 +1,16 @@
-Bundler.require
-require 'yaml'
-require '../lib/gateway'
+require './lib/api'
 
-$config = YAML.load_file 'config.yml'
+class SlackAPI < API
+
+  get '/' do
+    if $client.self
+      "Connected to #{$client.team.name} as #{$client.self.name}"
+    else
+      "Not Connected"
+    end
+  end
+
+end
 
 Slack.configure do |config|
   config.token = $config['slack_token']
@@ -14,31 +22,7 @@ $channels = {}
 
 $client = Slack::RealTime::Client.new
 
-$gateway = Gateway.new
-
 $first = true
-
-class API < Sinatra::Base
-  configure do
-    set :threaded, false
-    set :bind, $config['api']['host']
-    set :port, $config['api']['port']
-  end
-
-  get '/' do
-    if $client.self
-      "Connected to #{$client.team.name} as #{$client.self.name}"
-    else
-      "Not Connected"
-    end
-  end
-
-  post '/message' do
-    puts params.inspect
-    $gateway.send_to_slack params
-    "sent"
-  end
-end
 
 $client.on :hello do
   puts "Successfully connected, welcome '#{$client.self.name}' to the '#{$client.team.name}' team at https://#{$client.team.domain}.slack.com."
@@ -130,7 +114,7 @@ $client.on :message do |data|
           response = HTTParty.post hook['url'], {
             body: params,
             headers: {
-              'Authorization' => "Bearer #{$config['webhook_token']}"
+              'Authorization' => "Bearer #{hook['token']}"
             }
           }
           if response.parsed_response.is_a? Hash
@@ -160,5 +144,5 @@ end
 $client.start_async
 
 # Start the HTTP API
-API.run!
+SlackAPI.run!
 

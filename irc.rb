@@ -1,29 +1,12 @@
-Bundler.require
-require 'yaml'
-require '../lib/gateway'
+require './lib/api'
 
-$config = YAML.load_file 'config.yml'
-
-$gateway = Gateway.new
-
-class API < Sinatra::Base
-  configure do
-    set :threaded, false
-    set :bind, $config['api']['host']
-    set :port, $config['api']['port']
-  end
+class IRCAPI < API
 
   get '/' do
     "Connected to #{$config['irc']['server']} as #{$config['irc']['nick']}"
   end
 
-  post '/message' do
-    puts params.inspect
-    $gateway.send_to_irc params
-    "sent"
-  end
 end
-
 
 $client = Cinch::Bot.new do
   configure do |c|
@@ -69,7 +52,7 @@ $client = Cinch::Bot.new do
           response = HTTParty.post hook['url'], {
             body: params,
             headers: {
-              'Authorization' => "Bearer #{$config['webhook_token']}"
+              'Authorization' => "Bearer #{hook['token']}"
             }
           }
               puts response.inspect
@@ -94,5 +77,4 @@ Thread.new do
   $client.start
 end
 
-API.run!
-
+IRCAPI.run!
