@@ -41,18 +41,17 @@ $client = Cinch::Bot.new do
 
         # Post to the hook URL in a separate thread
         Thread.new do
-          params = {
-            network: 'irc',
-            server: $config['irc']['server'],
-            channel: data.channel.name,
-            timestamp: Time.now.to_f,
-            type: data.command,
-            user: data.user,
-            nick: data.user.nick,
-            text: data.message,
-            match: match.captures,
-            response_url: "http://localhost:#{$config['api']['port']}/message?channel=#{URI.encode_www_form_component(data.channel.name)}"
-          }
+          response = Gateway.send_to_hook hook,
+            'irc',
+            $config['irc']['server'],
+            data.channel.name,
+            data.channel.name,
+            Time.now.to_f,
+            data.command,
+            data.user,
+            data.user.nick,
+            data.message,
+            match
 
           #puts "Posting to #{hook['url']}"
           jj params

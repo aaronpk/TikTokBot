@@ -1,5 +1,5 @@
 hooks:
-- match: "^([a-z]+[a-z0-9]*)++"
+- match: "^([a-z]+[a-z0-9]*)\\+\\+"
   url: "http://localhost:8000/loqi.php"
 - match: "^ping$"
   url: "http://localhost:8000/ping.php"
