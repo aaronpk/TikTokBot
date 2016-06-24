@@ -10,6 +10,10 @@ class SlackAPI < API
     end
   end
 
+  def self.send_message(channel, text)
+    $client.message channel: channel, text: text
+  end
+
 end
 
 Slack.configure do |config|
@@ -60,7 +64,7 @@ $client.on :message do |data|
       end
 
       # First check if there is a channel restriction on the hook
-      next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, "#{$client.team.domain}.slack.com")
+      next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, $server)
 
       # Check if the text matched
       if match=Gateway.text_match(hook, data.text)
@@ -95,31 +99,21 @@ $client.on :message do |data|
 
         # Post to the hook URL in a separate thread
         Thread.new do
-          params = {
-            network: 'slack',
-            server: "#{$client.team.domain}.slack.com",
-            channel: ($channels[data.channel] ? $channels[data.channel].name : data.channel),
-            timestamp: data.ts,
-            type: data.type,
-            user: data.user,
-            nick: ($users[data.user] ? $users[data.user].name : data.user),
-            text: text,
-            match: match.captures,
-            response_url: "http://localhost:#{$config['api']['port']}/message?channel=#{URI.encode_www_form_component(data.channel)}"
-          }
+          response = Gateway.send_to_hook hook,
+            'slack',
+            "#{$client.team.domain}.slack.com",
+            ($channels[data.channel] ? $channels[data.channel].name : data.channel),
+            data.channel,
+            data.ts,
+            data.type,
+            data.user,
+            ($users[data.user] ? $users[data.user].name : data.user),
+            text,
+            match
 
-          #puts "Posting to #{hook['url']}"
-          jj params
-
-          response = HTTParty.post hook['url'], {
-            body: params,
-            headers: {
-              'Authorization' => "Bearer #{hook['token']}"
-            }
-          }
           if response.parsed_response.is_a? Hash
             puts response.parsed_response
-            $gateway.send_to_slack({channel: data.channel}.merge response.parsed_response)
+            $gateway.send_to_slack channel: data.channel, text: response.parsed_response[:text]
           else
             if !response.parsed_response.nil?
               puts response.inspect

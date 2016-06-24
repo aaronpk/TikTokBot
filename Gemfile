@@ -1,5 +1,7 @@
 source 'https://rubygems.org/'
 
+gem 'rake'
+
 gem 'slack-ruby-client'
 gem 'cinch'
 
@@ -9,3 +11,8 @@ gem 'sinatra', :require => 'sinatra/base'
 gem 'puma'
 gem 'httparty'
 
+gem 'jwt'
+
+group :test do
+  gem 'minitest'
+end

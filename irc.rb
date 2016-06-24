@@ -6,6 +6,14 @@ class IRCAPI < API
     "Connected to #{$config['irc']['server']} as #{$config['irc']['nick']}"
   end
 
+  def self.send_message(channel, text)
+    if channel[0] == '#'
+      $client.Channel(channel).send text
+    else
+      $client.User(channel).send text
+    end
+  end
+
 end
 
 $client = Cinch::Bot.new do
@@ -55,10 +63,10 @@ $client = Cinch::Bot.new do
               'Authorization' => "Bearer #{hook['token']}"
             }
           }
-              puts response.inspect
+
           if response.parsed_response.is_a? Hash
             puts response.parsed_response
-            $gateway.send_to_irc({channel: data.channel.name}.merge response.parsed_response)
+            $gateway.send_to_slack channel: data.channel, text: response.parsed_response[:text]
           else
             if !response.parsed_response.nil?
               puts response.inspect

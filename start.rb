@@ -6,12 +6,13 @@ if ARGV[0].nil?
   exit 1
 end
 
-config_file = YAML.load_file 'config.yml'
+$base_config = YAML.load_file 'config.yml'
 
-$config = config_file[ARGV[0]]
+$server = ARGV[0]
+$config = $base_config['servers'][$server]
 
 if $config.nil?
-  puts "Could not find config for #{ARGV[0]}"
+  puts "Could not find config for #{$server}"
   exit 1
 end
 
