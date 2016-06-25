@@ -9,7 +9,7 @@ class API < Sinatra::Base
   # 
   # Authorization: Bearer token
   # Parameters:
-  # - text
+  # - content
   # - channel (optional)
   post '/message' do
     if request.env['HTTP_AUTHORIZATION'].nil?
@@ -23,18 +23,20 @@ class API < Sinatra::Base
       allowed = Gateway.token_match token, params[:channel], $server
 
       if allowed
-
+        self.class.send_message params[:channel], params[:content]
+      else
+        "not allowed"
       end
+    else
+      "invalid access token"
     end
-
-    "error"
   end
 
   # Post a message in response to a web hook
   # The token encodes the channel that this message is sent to
   #
   # Parameters:
-  # - text
+  # - content
   post '/message/:token' do
     puts params.inspect
 
@@ -48,9 +50,7 @@ class API < Sinatra::Base
 
       channel = token[0]['channel']
 
-      self.class.send_message channel, params[:text]
-
-      "sent"
+      self.class.send_message channel, params[:content]
     rescue JWT::ExpiredSignature
       "url expired"
     end
