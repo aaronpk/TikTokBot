@@ -1,7 +1,7 @@
 Bundler.require
 
 if ARGV[0].nil?
-  puts "Usage: ruby start.rb {server}"
+  puts "Usage: ruby tiktok.rb {server}"
   exit 1
 end
 
