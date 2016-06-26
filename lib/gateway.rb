@@ -1,5 +1,15 @@
 class Gateway
 
+  def self.process(&block)
+    if $config['thread']
+      Thread.new do
+        block.call
+      end
+    else
+      block.call
+    end
+  end
+
   def self.load_hooks
     YAML.load_file 'hooks.yml'
   end
@@ -23,6 +33,7 @@ class Gateway
   end    
 
   def self.text_match(hook, text)
+    return false if hook['match'].nil? || text.nil?
     Regexp.new(hook['match']).match(text)
   end
 
@@ -42,7 +53,7 @@ class Gateway
       channel: channel.to_hash,
       author: author.to_hash,
       content: content,
-      match: match.captures,
+      match: match ? match.captures : nil,
       response_url: response_url
     }
 

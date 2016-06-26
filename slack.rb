@@ -221,11 +221,7 @@ $client.on :message do |data|
         puts match.captures.inspect
 
         # Post to the hook URL in a separate thread
-        if $config['thread']
-          Thread.new do
-            SlackAPI.send_to_hook hook, 'message', data, text, match
-          end
-        else
+        Gateway.process do
           SlackAPI.send_to_hook hook, 'message', data, text, match
         end
 

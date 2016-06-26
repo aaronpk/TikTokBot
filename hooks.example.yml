@@ -15,6 +15,13 @@ hooks:
   match: ".*"
   url: "http://localhost:8000/log.php"
   token: xxxxx
+- events:
+  - topic
+  - join
+  - leave
+  channels:
+  - "@freenode"
+  url: "http://localhost:8000/log.php"
 profile_data:
 - channels:
   - "#example@freenode"
