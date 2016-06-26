@@ -31,6 +31,7 @@ All hooks are defined in `hooks.yml`. This file is reloaded on every message to 
 Hook entries consist of the following parameters:
 
 * `match` - A regex that will be run against the incoming chat text. The hook will only run if the regex matches. You can define capture groups that will be passed to the hook as well.
+* `events` - If you want to match join/leave/topic events instead of text, include the events you are listening to in this property instead of specifying a `match` regex.
 * `url` - The full URL to post the incoming message to.
 * `token` - If defined, this token will be sent as a bearer token to the hook URL.
 * `channels` - An array of channels to scope this hook to. If none are defined, this hook will be matched against every channel on every server.
@@ -56,6 +57,21 @@ This hook will match every message in the every room the bot is in on the freeno
   channels:
   - "@freenode"
 ```
+
+This hook will run for every join/part/topic event in the given channels.
+
+```
+  events:
+  - join
+  - leave
+  - topic
+  url: "http://example.com/log"
+  channels:
+  - "#example@freenode"
+```
+
+NOTE: Replies from hooks are *also* sent back through the hook matching flow, so be careful not to end up in an infinite loop! This allows you to use a global matching hook to log every event, or to trigger hooks from other hooks. Mainly you should make sure that if you have a broadly matching hook such as `.*` that it doesn't cause the bot to say anything.
+
 
 ## Profile Data
 

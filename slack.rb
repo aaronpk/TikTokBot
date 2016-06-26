@@ -38,24 +38,22 @@ class SlackAPI < API
     else
       result = $client.message channel: channel, text: content
     end
-    puts "======= sent to Slack ======="
-    puts result.inspect
 
-    "sent"
+    result
   end
 
-  def self.send_to_hook(hook, type, data, content, match)
+  def self.send_to_hook(hook, type, ts, channel, user, content, match)
     response = Gateway.send_to_hook hook,
-      data.ts,
+      ts,
       'slack',
       $client.team.domain,
-      $channels[data.channel],
-      $users[data.user],
+      $channels[channel],
+      $users[user],
       type,
       content,
       match
     if response.parsed_response.is_a? Hash
-      self.handle_response data.channel, response.parsed_response
+      self.handle_response channel, response.parsed_response
     else
       puts "Hook did not send back a hash:"
       puts response.inspect
@@ -79,7 +77,15 @@ class SlackAPI < API
         "unknown channel #{channel}"
       end
     elsif response['content']
-      SlackAPI.send_message channel, response['content']
+      result = SlackAPI.send_message channel, response['content']
+      return "#{result}: #{channel}" if result != true
+
+      hooks = Gateway.load_hooks
+      # TODO: the Slack API should be returning a timestamp, but the gem appears to only return "true" after sending a message
+      fetch_user_info hooks, channel, $client.self.id
+      handle_message hooks, Time.now.to_f, channel, $client.self.id, response['content']
+
+      "sent"
     else
       "error"
     end
@@ -159,8 +165,21 @@ def fetch_user_info(hooks, channel, user)
   end
 end
 
-def handle_message()
+def handle_message(hooks, ts, channel, user, text)
+  hooks['hooks'].each do |hook|
+    # First check if there is a channel restriction on the hook
+    next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
 
+    # Check if the text matched
+    if match=Gateway.text_match(hook, text)
+      puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
+
+      # Post to the hook URL in a separate thread
+      Gateway.process do
+        SlackAPI.send_to_hook hook, 'message', ts, channel, user, text, match
+      end
+    end
+  end
 end
 
 
@@ -214,23 +233,8 @@ $client.on :message do |data|
       text = "/me #{text}"
     end
 
-    hooks['hooks'].each do |hook|
+    handle_message hooks, data.ts, data.channel, data.user, text
 
-      # First check if there is a channel restriction on the hook
-      next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, $server)
-
-      # Check if the text matched
-      if match=Gateway.text_match(hook, text)
-        puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
-        puts match.captures.inspect
-
-        # Post to the hook URL in a separate thread
-        Gateway.process do
-          SlackAPI.send_to_hook hook, 'message', data, text, match
-        end
-
-      end
-    end
   end
 end
 
