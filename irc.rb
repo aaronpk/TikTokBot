@@ -54,7 +54,20 @@ class IRCAPI < API
   end
 
   def self.handle_response(channel, response)
-    IRCAPI.send_message channel, response['content']
+    if response['action'] == 'join'
+      $client.join(channel)
+      "joining #{channel}"
+    elsif response['action'] == 'leave'
+      $client.part(channel)
+      "leaving #{channel}"
+    elsif response['topic']
+      $client.Channel(channel).topic = response['topic']
+      "setting topic for #{channel}"
+    elsif response['content']
+      IRCAPI.send_message channel, response['content']
+    else
+      "error"
+    end
   end
 
 end
@@ -98,7 +111,6 @@ $client = Cinch::Bot.new do
     # TODO: expire the cache
     if $nicks[data.user.nick].nil?
       user_info = chat_author_from_irc_user data.user
-      puts "Enhancing account info from hooks"
 
       hooks['profile_data'].each do |hook|
         next if !Gateway.channel_match(hook, channel, $config['irc']['server'])

@@ -229,8 +229,16 @@ In all cases, the `channel` parameter only applies for using the external API. T
 
 ```json
 {
-  "action": "part",
+  "action": "leave",
   "channel": "#example"
 }
 ```
 
+### Set a channel topic
+
+```json
+{
+  "channel": "#example",
+  "topic": "New Topic"
+}
+```

@@ -63,7 +63,24 @@ class SlackAPI < API
   end
 
   def self.handle_response(channel, response)
-    SlackAPI.send_message channel, response['content']
+    if response['action'] == 'join'
+      "not allowed"
+    elsif response['action'] == 'leave'
+      $client.web_client.channels_leave(name: channel)
+      "not allowed"
+    elsif response['topic']
+      channel_id = $channel_names[channel]
+      if channel_id
+        $client.web_client.channels_setTopic(channel: channel_id, topic: response['topic'])
+        "setting topic for #{channel}"
+      else
+        "unknown channel #{channel}"
+      end
+    elsif response['content']
+      SlackAPI.send_message channel, response['content']
+    else
+      "error"
+    end
   end
 
 end
