@@ -7,6 +7,7 @@ class IRCAPI < API
   get '/cache' do
     {
       nicks: $nicks,
+      channels: $channels
     }.to_json
   end
 
@@ -24,31 +25,26 @@ class IRCAPI < API
     "sent"
   end
 
-  def self.handle_message(hook, channel, data, match, command, text)
+  def self.send_to_hook(hook, channel, nick, content, match)
     response = Gateway.send_to_hook hook,
       Time.now.to_f,
       'irc',
       $config['irc']['server'],
-      channel,
-      channel,
-      command,
-      data.user,
-      data.user.nick,
-      text,
+      $channels[channel],
+      $nicks[nick],
+      'message',
+      content,
       match
-
-    puts "==================="
-    puts response.parsed_response.inspect
-    puts "==================="
-
     if response.parsed_response.is_a? Hash
-      IRCAPI.send_message channel, response.parsed_response['content']
+      self.handle_response channel, response.parsed_response
     else
-      puts "Hook response was not JSON"
-      if !response.parsed_response.nil?
-        puts response.inspect
-      end
+      puts "Hook did not send back a hash:"
+      puts response.inspect
     end
+  end
+
+  def self.handle_response(channel, response)
+    IRCAPI.send_message channel, response['content']
   end
 
 end
@@ -63,7 +59,7 @@ def chat_author_from_irc_user(user)
 end
 
 
-
+$channels = {}
 $nicks = {}
 
 $client = Cinch::Bot.new do
@@ -78,6 +74,14 @@ $client = Cinch::Bot.new do
 
   on :message do |data, nick|
     channel = data.channel ? data.channel.name : data.user.nick
+
+    if $channels[channel].nil?
+      $channels[channel] = Bot::Channel.new({
+        uid: channel,
+        name: channel
+      })
+    end
+
     hooks = Gateway.load_hooks
 
     # Enhance the author info
@@ -113,10 +117,10 @@ $client = Cinch::Bot.new do
         # Post to the hook URL in a separate thread
         if $config['thread']
           Thread.new do 
-            IRCAPI.handle_message hook, channel, data, match, command, text
+            IRCAPI.send_to_hook hook, channel, data.user.nick, text, match
           end
         else
-          IRCAPI.handle_message hook, channel, data, match, command, text
+          IRCAPI.send_to_hook hook, channel, data.user.nick, text, match
         end
 
       end
