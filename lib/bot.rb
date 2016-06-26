@@ -44,10 +44,8 @@ module Bot
     def method_missing(m, *args)
       if m.match /\=$/
         if m == '[]='.to_sym
-          puts "Assigning: #{args[0]} #{args[1]}"
           @data[args[0]] = args[1]
         else
-          puts "Assigning: #{m} #{args[0]}"
           @data[m.to_s.chomp('=').to_sym] = args[0]
         end
       else

@@ -33,21 +33,25 @@ class SlackAPI < API
       return "unknown channel"
     end
 
-    result = $client.message channel: channel, text: content
+    if match=content.match(/^\/me (.+)/)
+      result = $client.web_client.chat_meMessage channel: channel, text: match[1]
+    else
+      result = $client.message channel: channel, text: content
+    end
     puts "======= sent to Slack ======="
     puts result.inspect
 
     "sent"
   end
 
-  def self.send_to_hook(hook, data, content, match)
+  def self.send_to_hook(hook, type, data, content, match)
     response = Gateway.send_to_hook hook,
       data.ts,
       'slack',
       $client.team.domain,
       $channels[data.channel],
       $users[data.user],
-      data.type,
+      type,
       content,
       match
     if response.parsed_response.is_a? Hash
@@ -183,6 +187,10 @@ $client.on :message do |data|
     # Now unescape the rest of the message
     text = Slack::Messages::Formatting.unescape(text)
 
+    if data.subtype && data.subtype == 'me_message'
+      text = "/me #{text}"
+    end
+
     hooks['hooks'].each do |hook|
 
       # First check if there is a channel restriction on the hook
@@ -196,10 +204,10 @@ $client.on :message do |data|
         # Post to the hook URL in a separate thread
         if $config['thread']
           Thread.new do
-            SlackAPI.send_to_hook hook, data, text, match
+            SlackAPI.send_to_hook hook, 'message', data, text, match
           end
         else
-          SlackAPI.send_to_hook hook, data, text, match
+          SlackAPI.send_to_hook hook, 'message', data, text, match
         end
 
       end

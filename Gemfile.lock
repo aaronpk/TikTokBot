@@ -1,3 +1,16 @@
+GIT
+  remote: git@github.com:aaronpk/slack-ruby-client.git
+  revision: 613dd1f5494e63fabd42f41342a0ce4b83307c1e
+  specs:
+    slack-ruby-client (0.7.5)
+      activesupport
+      faraday
+      faraday_middleware
+      gli
+      hashie
+      json
+      websocket-driver
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -55,14 +68,6 @@ GEM
       rack (~> 1.5)
       rack-protection (~> 1.4)
       tilt (>= 1.3, < 3)
-    slack-ruby-client (0.7.4)
-      activesupport
-      faraday
-      faraday_middleware
-      gli
-      hashie
-      json
-      websocket-driver
     thread_safe (0.3.5)
     tilt (2.0.5)
     timers (4.1.1)
@@ -85,7 +90,7 @@ DEPENDENCIES
   puma
   rake
   sinatra
-  slack-ruby-client
+  slack-ruby-client!
 
 BUNDLED WITH
    1.12.4

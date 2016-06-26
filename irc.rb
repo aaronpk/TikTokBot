@@ -13,26 +13,36 @@ class IRCAPI < API
 
   post '/cache/expire' do
     $nicks = {}
+    $channels = {}
     "ok"
   end
 
   def self.send_message(channel, content)
-    if channel[0] == '#'
-      result = $client.Channel(channel).send content
+    if match=content.match(/^\/me (.+)/)
+      if channel[0] == '#'
+        result = $client.Channel(channel).action match[1]
+      else
+        result = $client.User(channel).action match[1]
+      end
     else
-      result = $client.User(channel).send content
+      if channel[0] == '#'
+        result = $client.Channel(channel).send content
+      else
+        result = $client.User(channel).send content
+      end
     end
+
     "sent"
   end
 
-  def self.send_to_hook(hook, channel, nick, content, match)
+  def self.send_to_hook(hook, type, channel, nick, content, match)
     response = Gateway.send_to_hook hook,
       Time.now.to_f,
       'irc',
       $config['irc']['server'],
       $channels[channel],
       $nicks[nick],
-      'message',
+      type,
       content,
       match
     if response.parsed_response.is_a? Hash
@@ -117,10 +127,10 @@ $client = Cinch::Bot.new do
         # Post to the hook URL in a separate thread
         if $config['thread']
           Thread.new do 
-            IRCAPI.send_to_hook hook, channel, data.user.nick, text, match
+            IRCAPI.send_to_hook hook, 'message', channel, data.user.nick, text, match
           end
         else
-          IRCAPI.send_to_hook hook, channel, data.user.nick, text, match
+          IRCAPI.send_to_hook hook, 'message', channel, data.user.nick, text, match
         end
 
       end
