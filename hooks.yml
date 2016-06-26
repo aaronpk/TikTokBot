@@ -19,3 +19,27 @@ hooks:
   match: ".*"
   url: "http://localhost:8000/aaronpk.php"
   token: gh7361cukenncyy313
+- channels:
+  - "#indiewebcamp@freenode"
+  - "#test@freenode"
+  match: ".*"
+  url: "http://localhost:8000/log.php"
+  token: gh7361cukenncyy313
+profile_data:
+- channels:
+  - "#indiewebcamp@freenode"
+  - "#indieweb@freenode"
+  - "#indieweb-dev@freenode"
+  - "#indieweb-offtopic@freenode"
+  - "#random@squashreports"
+  url: "http://localhost:8000/users/indiewebcamp.php"
+  token: gh7361cukenncyy313
+- channels:
+  - "#pdxtech@freenode"
+  url: "http://localhost:8000/users/pdxtech.php"
+- channels:
+  - "#social@w3c"
+  url: "http://localhost:8000/users/socialwg.php"
+- channels:
+  - "@unicorner"
+  url: "http://localhost:8000/users/unicorner.php"

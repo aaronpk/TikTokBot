@@ -26,23 +26,22 @@ class Gateway
     Regexp.new(hook['match']).match(text)
   end
 
-  def self.send_to_hook(hook, network, server, channel_name, channel_id, timestamp, type, user, nick, text, match)
+  def self.send_to_hook(hook, timestamp, network, server, channel, author, type, content, match)
     token = JWT.encode({
-      :channel => channel_id,
+      :channel => channel.uid,
       :exp => (Time.now.to_i + 60*5)  # webhook URLs are valid for 5 minutes
     }, $base_config['secret'], 'HS256')
 
     response_url = "#{$config['api']['base_url']}/message/#{URI.encode_www_form_component(token)}"
 
     params = {
+      type: type,
+      timestamp: timestamp,
       network: network,
       server: server,
-      channel: channel_name,
-      timestamp: timestamp,
-      type: type,
-      user: user,
-      nick: nick,
-      text: text,
+      channel: channel.to_hash,
+      author: author.to_hash,
+      content: content,
       match: match.captures,
       response_url: response_url
     }
@@ -50,11 +49,38 @@ class Gateway
     jj params
 
     HTTParty.post hook['url'], {
-      body: params,
+      body: params.to_json,
       headers: {
-        'Authorization' => "Bearer #{hook['token']}"
+        'Authorization' => "Bearer #{hook['token']}",
+        'Content-type' => 'application/json'
       }
     }
+  end
+
+  def self.enhance_profile(hook, user_info)
+    response = HTTParty.post hook['url'], {
+      body: user_info.to_hash.to_json,
+      headers: {
+        'Authorization' => "Bearer #{hook['token']}",
+        'Content-type' => 'application/json'
+      }
+    }
+    puts "Got response from profile service"
+    puts response.parsed_response
+
+    data = response.parsed_response
+    if data.class == Hash
+      ['username','name','photo','url','tz'].each do |key|
+        user_info[key.to_sym] = data[key] if data[key]
+      end
+      if data['pronouns']
+        ['nominative','oblique','possessive'].each do |key|
+          user_info.pronouns[key.to_sym] = data['pronouns'][key] if data['pronouns'][key]
+        end
+      end
+    end
+
+    user_info
   end
 
   def self.load_tokens

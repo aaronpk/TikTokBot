@@ -23,7 +23,7 @@ class API < Sinatra::Base
       allowed = Gateway.token_match token, params[:channel], $server
 
       if allowed
-        self.class.send_message params[:channel], params[:content]
+        self.class.handle_response params[:channel], params
       else
         "not allowed"
       end
@@ -50,7 +50,7 @@ class API < Sinatra::Base
 
       channel = token[0]['channel']
 
-      self.class.send_message channel, params[:content]
+      self.class.handle_response channel, params
     rescue JWT::ExpiredSignature
       "url expired"
     end

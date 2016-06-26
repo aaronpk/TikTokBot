@@ -1,5 +1,3 @@
-require './lib/api'
-
 class SlackAPI < API
 
   get '/' do
@@ -8,6 +6,23 @@ class SlackAPI < API
     else
       "Not Connected"
     end
+  end
+
+  get '/cache' do
+    {
+      users: $users,
+      nicks: $nicks,
+      channels: $channels,
+      channel_names: $channel_names
+    }.to_json
+  end
+
+  post '/cache/expire' do
+    $nicks = {}
+    $users = {}
+    $channels = {}
+    $channel_names = {}
+    "ok"
   end
 
   def self.send_message(channel, content)
@@ -25,30 +40,66 @@ class SlackAPI < API
     "sent"
   end
 
-  def self.handle_message(hook, data, match, text)
+  def self.send_to_hook(hook, data, content, match)
     response = Gateway.send_to_hook hook,
-      'slack',
-      "#{$client.team.domain}.slack.com",
-      ($channels[data.channel] ? $channels[data.channel].name : data.channel),
-      data.channel,
       data.ts,
+      'slack',
+      $client.team.domain,
+      $channels[data.channel],
+      $users[data.user],
       data.type,
-      data.user,
-      ($users[data.user] ? $users[data.user].name : data.user),
-      text,
+      content,
       match
-
     if response.parsed_response.is_a? Hash
-      puts response.parsed_response
-      SlackAPI.send_message data.channel, response.parsed_response['content']
+      self.handle_response data.channel, response.parsed_response
     else
-      if !response.parsed_response.nil?
-        puts response.inspect
-      end
+      puts "Hook did not send back a hash:"
+      puts response.inspect
     end
   end
 
+  def self.handle_response(channel, response)
+    SlackAPI.send_message channel, response['content']
+  end
+
 end
+
+def chat_author_from_slack_user_id(user_id)
+  user = $client.web_client.users_info(user: user_id).user
+  Bot::Author.new({
+    uid: user_id,
+    nickname: user.name,
+    username: user.name,
+    name: user.real_name,
+    photo: user.profile.image_192,
+    tz: user.tz,
+  })
+end
+
+def chat_channel_from_slack_group_id(channel_id)
+  channel = $client.web_client.groups_info(channel: channel_id).group
+  Bot::Channel.new({
+    uid: channel_id,
+    name: "##{channel.name}"
+  })
+end
+
+def chat_channel_from_slack_channel_id(channel_id)
+  channel = $client.web_client.channels_info(channel: channel_id).channel
+  Bot::Channel.new({
+    uid: channel_id,
+    name: "##{channel.name}"
+  })
+end
+
+def chat_channel_from_slack_user_id(channel_id)
+  user = $client.web_client.users_info(user: channel_id).user
+  Bot::Channel.new({
+    uid: channel_id,
+    name: user.name
+  })
+end
+
 
 Slack.configure do |config|
   config.token = $config['slack_token']
@@ -74,6 +125,8 @@ $client.on :message do |data|
   end
 
   if !data.hidden
+    hooks = Gateway.load_hooks
+
     puts "================="
     puts data.inspect
 
@@ -82,36 +135,45 @@ $client.on :message do |data|
       # The channel might actually be a group ID or DM ID
       if data.channel[0] == "G"
         puts "Fetching group info: #{data.channel}"
-        $channels[data.channel] = $client.web_client.groups_info(channel: data.channel).group
-        $channels[data.channel].name = "##{$channels[data.channel].name}"
+        $channels[data.channel] = chat_channel_from_slack_group_id data.channel
       elsif data.channel[0] == "D"
-        $channels[data.channel] = $client.web_client.users_info(user: data.user).user
+        $channels[data.channel] = chat_channel_from_slack_user_id data.user
         puts "Private message from #{$channels[data.channel].name}"
       elsif data.channel[0] == "C"
         puts "Fetching channel info: #{data.channel}"
-        $channels[data.channel] = $client.web_client.channels_info(channel: data.channel).channel
-        $channels[data.channel].name = "##{$channels[data.channel].name}"
+        $channels[data.channel] = chat_channel_from_slack_channel_id data.channel
       end
       $channel_names[$channels[data.channel].name] = data.channel
     end
 
+    # TODO: expire the cache
     if $users[data.user].nil?
       puts "Fetching account info: #{data.user}"
-      $users[data.user] = $client.web_client.users_info(user: data.user).user
-      $nicks[$users[data.user].name] = $users[data.user]
+      user_info = chat_author_from_slack_user_id data.user
+      puts "Enhancing account info from hooks"
+
+      hooks['profile_data'].each do |hook|
+        next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, $server)
+        user_info = Gateway.enhance_profile hook, user_info
+      end
+
+      $users[data.user] = user_info
+      $nicks[user_info.nickname] = user_info.uid
+      puts user_info.inspect
     end
 
     # If the message is a normal message, then there might be occurrences of "<@xxxxxxxx>" in the text, which need to get replaced
     text = data.text
     text.gsub!(/<@([A-Z0-9]+)>/i) do |match|
       if $users[$1]
-        "<@#{$1}|#{$users[$1].user.name}>"
+        "<@#{$1}|#{$users[$1].nickname}>"
       else
         # Look up user info and store for later
-        info = $client.web_client.users_info(user: $1)
+        info = chat_author_from_slack_user_id $1
         if info
           $users[$1] = info
-          "<@#{$1}|#{$users[$1].user.name}>"
+          $nicks[info.nickname] = info.uid
+          "<@#{$1}|#{info.nickname}>"
         else
           match
         end
@@ -121,7 +183,6 @@ $client.on :message do |data|
     # Now unescape the rest of the message
     text = Slack::Messages::Formatting.unescape(text)
 
-    hooks = Gateway.load_hooks
     hooks['hooks'].each do |hook|
 
       # First check if there is a channel restriction on the hook
@@ -135,10 +196,10 @@ $client.on :message do |data|
         # Post to the hook URL in a separate thread
         if $config['thread']
           Thread.new do
-            SlackAPI.handle_message hook, data, match, text
+            SlackAPI.send_to_hook hook, data, text, match
           end
         else
-          SlackAPI.handle_message hook, data, match, text
+          SlackAPI.send_to_hook hook, data, text, match
         end
 
       end

@@ -1,9 +1,18 @@
-require './lib/api'
-
 class IRCAPI < API
 
   get '/' do
     "Connected to #{$config['irc']['server']} as #{$config['irc']['nick']}"
+  end
+
+  get '/cache' do
+    {
+      nicks: $nicks,
+    }.to_json
+  end
+
+  post '/cache/expire' do
+    $nicks = {}
+    "ok"
   end
 
   def self.send_message(channel, content)
@@ -17,11 +26,11 @@ class IRCAPI < API
 
   def self.handle_message(hook, channel, data, match, command, text)
     response = Gateway.send_to_hook hook,
+      Time.now.to_f,
       'irc',
       $config['irc']['server'],
       channel,
       channel,
-      Time.now.to_f,
       command,
       data.user,
       data.user.nick,
@@ -44,6 +53,19 @@ class IRCAPI < API
 
 end
 
+def chat_author_from_irc_user(user)
+  Bot::Author.new({
+    uid: user.nick,
+    nickname: user.nick,
+    username: user.data[:user],
+    name: user.data[:realname],
+  })
+end
+
+
+
+$nicks = {}
+
 $client = Cinch::Bot.new do
   configure do |c|
     c.server = $config['irc']['host']
@@ -56,6 +78,21 @@ $client = Cinch::Bot.new do
 
   on :message do |data, nick|
     channel = data.channel ? data.channel.name : data.user.nick
+    hooks = Gateway.load_hooks
+
+    # Enhance the author info
+    # TODO: expire the cache
+    if $nicks[data.user.nick].nil?
+      user_info = chat_author_from_irc_user data.user
+      puts "Enhancing account info from hooks"
+
+      hooks['profile_data'].each do |hook|
+        next if !Gateway.channel_match(hook, channel, $config['irc']['server'])
+        user_info = Gateway.enhance_profile hook, user_info
+      end
+
+      $nicks[data.user.nick] = user_info      
+    end
 
     command = "message"
 
@@ -66,7 +103,6 @@ $client = Cinch::Bot.new do
       text = data.message
     end
 
-    hooks = Gateway.load_hooks
     hooks['hooks'].each do |hook|
       next if !Gateway.channel_match(hook, channel, $config['irc']['server'])
 
@@ -89,8 +125,7 @@ $client = Cinch::Bot.new do
   end
 
   on :invite do |data, nick|
-    puts "INVITE:"
-    puts data.inspect
+    $client.join(data.channel)
   end
 
   on :topic do |data|

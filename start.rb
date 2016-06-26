@@ -1,5 +1,4 @@
 Bundler.require
-require './lib/init'
 
 if ARGV[0].nil?
   puts "Usage: ruby start.rb {server}"
@@ -15,6 +14,8 @@ if $config.nil?
   puts "Could not find config for #{$server}"
   exit 1
 end
+
+require './lib/init'
 
 if $config['network'] == 'slack'
   require './slack'
