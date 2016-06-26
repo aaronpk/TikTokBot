@@ -7,8 +7,8 @@ TikTokBot is a bot framework for Slack and IRC.
 There are three configuration files you'll need to set up.
 
 * `config.yml` - Defines the IRC and Slack servers the bot will connect to, as well as the corresponding HTTP servers to set up.
-** `secret` - Defines the master secret used to encrypt JWT tokens.
-** `servers` - Configures the IRC and Slack servers. See `config.example.yml` for examples.
+ * `secret` - Defines the master secret used to encrypt JWT tokens.
+ * `servers` - Configures the IRC and Slack servers. See `config.example.yml` for examples.
 * `tokens.yml` - Defines the API tokens used to trigger the bot from external services. See `tokens.example.yml` for examples.
 * `hooks.yml` - Defines the bot hooks that will trigger outgoing requests. See the section below, "Hooks" for details.
 
