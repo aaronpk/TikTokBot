@@ -1,0 +1,26 @@
+secret: xxxxx
+servers:
+  slackexample:
+    network: slack
+    slack_token: xoxo-123123123123123123123123
+    api:
+      base_url: "http://localhost:8001"
+      port: 8001
+      host: 0.0.0.0
+    thread: true
+  freenode:
+    network: irc
+    irc:
+      server: freenode
+      host: irc.freenode.net
+      port: 6667
+      password:
+      nick: TikTokBot
+      username: TikTokBot
+      channels:
+      - "#tiktokbot"
+    api:
+      base_url: "http://localhost:8002"
+      port: 8002
+      host: 0.0.0.0
+    thread: true

@@ -1,2 +1,4 @@
 config.yml
+tokens.yml
+hooks.yml
 .DS_Store

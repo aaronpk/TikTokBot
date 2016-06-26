@@ -1,0 +1,22 @@
+hooks:
+- match: "^@?([a-z]+[a-z0-9]*)(\\+\\+|--)"
+  url: "http://localhost:8000/karma.php"
+- match: "^!wave$"
+  url: "http://localhost:8000/wave.php"
+- match: "^ping$"
+  url: "http://localhost:8000/ping.php"
+  token: xxxxx
+- match: "^!alpha ([^ ]+) ([^ ]+)"
+  url: "http://localhost:8000/alpha.php"
+  token: xxxxx
+- channels:
+  - "#example1@freenode"
+  - "#example2@freenode"
+  match: ".*"
+  url: "http://localhost:8000/log.php"
+  token: xxxxx
+profile_data:
+- channels:
+  - "#example@freenode"
+  url: "http://localhost:8000/users/example.php"
+  token: xxxxx

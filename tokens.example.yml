@@ -1,0 +1,11 @@
+# Define access tokens and the channels they are allowed to send to here.
+# If only a token is defined, it can post to any channel and server.
+# Otherwise, the token is scoped to the channel and server defined.
+tokens:
+- token: xxxmastertokenxxx
+- token: xxxchanneltokenxxx
+  channels:
+  - "#example@freenode"
+- token: xxxservertokenxxx
+  channels:
+  - "@freenode"
