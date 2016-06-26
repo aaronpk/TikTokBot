@@ -40,6 +40,74 @@ This hook will match every message in the every room the bot is in on the freeno
   - "@freenode"
 ```
 
+## Profile Data
+
+Similar to defining hooks that run when messages are received, you can also define hooks that are run every time a new user says something, in order to enhance their profile data from external sources. By default, the bot will use the available information to build a user profile (e.g. name, profile photo from Slack, but very little is available from IRC). If you define a `profile_data` hook, the hook will receive a payload when a user needs to be looked up.
+
+### Request
+
+The first time a Slack user appears, this object will be sent to the registered profile data hook:
+
+```json
+{
+  "uid": "U0HV8XXXX",
+  "nickname": "aaronpk",
+  "username": "aaronpk",
+  "name": "Aaron Parecki",
+  "photo": "https://secure.gravatar.com/avatar/11954e59b49809173d48133ec4047fce.jpg?s=192&d=https%3A%2F%2Fa.slack-edge.com%2F7fa9%2Fimg%2Favatars%2Fava_0005-192.png",
+  "url": null,
+  "tz": "America/Los_Angeles",
+  "pronouns": {
+    "nominative": null,
+    "oblique": null,
+    "possessive": null
+  }
+}
+```
+
+The IRC example is much more barebones:
+
+```json
+{
+  "uid": "aaronpk",
+  "nickname": "aaronpk",
+  "username": "~aaronpk",
+  "name": "Aaron Parecki",
+  "photo": null,
+  "url": null,
+  "tz": null,
+  "pronouns": {
+    "nominative": null,
+    "oblique": null,
+    "possessive": null
+  }
+}
+```
+
+
+### Response
+
+Return a JSON response with the same object you received with any of the information other than nickname or uid replaced. You can fill out the profile photo, URL, and pronouns for example.
+
+```json
+{
+  "uid": "U0HV8XXXX",
+  "nickname": "aaronpk",
+  "username": "aaronpk",
+  "name": "Aaron Parecki",
+  "photo": "https://aaronparecki.com/images/aaronpk-128.jpg",
+  "url": "http://aaronparecki.com",
+  "tz": "US/Pacific",
+  "pronouns": {
+    "nominative": "he",
+    "oblique": "him",
+    "possessive": "his"
+  }
+}
+```
+
+This profile data will be sent in the `author` property of messages to the hooks.
+
 
 
 ## API
