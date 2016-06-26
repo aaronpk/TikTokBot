@@ -242,3 +242,13 @@ In all cases, the `channel` parameter only applies for using the external API. T
   "topic": "New Topic"
 }
 ```
+
+### Typing indicator
+
+For Slack, the bot can indicate it's typing a message. This only works when sent to the `response_url`. This should be sent no more than once every 3 seconds.
+
+```json
+{
+  "action": "typing"
+}
+```

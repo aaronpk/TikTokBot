@@ -68,6 +68,8 @@ class SlackAPI < API
     elsif response['action'] == 'leave'
       $client.web_client.channels_leave(name: channel)
       "not allowed"
+    elsif response['action'] == 'typing'
+      $client.typing channel: channel
     elsif response['topic']
       channel_id = $channel_names[channel]
       if channel_id
