@@ -123,6 +123,46 @@ def chat_channel_from_slack_user_id(channel_id)
   })
 end
 
+def fetch_channel_info(channel, user)
+  # Map Slack IDs to names used in configs and things
+  if $channels[channel].nil?
+    # The channel might actually be a group ID or DM ID
+    if channel[0] == "G"
+      puts "Fetching group info: #{data.channel}"
+      $channels[channel] = chat_channel_from_slack_group_id channel
+    elsif channel[0] == "D"
+      $channels[channel] = chat_channel_from_slack_user_id user
+      puts "Private message from #{$channels[channel].name}"
+    elsif channel[0] == "C"
+      puts "Fetching channel info: #{channel}"
+      $channels[channel] = chat_channel_from_slack_channel_id channel
+    end
+    $channel_names[$channels[channel].name] = channel
+  end
+end
+
+def fetch_user_info(hooks, channel, user)
+  # TODO: expire the cache
+  if $users[user].nil?
+    puts "Fetching account info: #{user}"
+    user_info = chat_author_from_slack_user_id user
+    puts "Enhancing account info from hooks"
+
+    hooks['profile_data'].each do |hook|
+      next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
+      user_info = Gateway.enhance_profile hook, user_info
+    end
+
+    $users[user] = user_info
+    $nicks[user_info.nickname] = user_info.uid
+    puts user_info.inspect
+  end
+end
+
+def handle_message()
+
+end
+
 
 Slack.configure do |config|
   config.token = $config['slack_token']
@@ -153,53 +193,17 @@ $client.on :message do |data|
     puts "================="
     puts data.inspect
 
-    # Map Slack IDs to names used in configs and things
-    if $channels[data.channel].nil?
-      # The channel might actually be a group ID or DM ID
-      if data.channel[0] == "G"
-        puts "Fetching group info: #{data.channel}"
-        $channels[data.channel] = chat_channel_from_slack_group_id data.channel
-      elsif data.channel[0] == "D"
-        $channels[data.channel] = chat_channel_from_slack_user_id data.user
-        puts "Private message from #{$channels[data.channel].name}"
-      elsif data.channel[0] == "C"
-        puts "Fetching channel info: #{data.channel}"
-        $channels[data.channel] = chat_channel_from_slack_channel_id data.channel
-      end
-      $channel_names[$channels[data.channel].name] = data.channel
-    end
-
-    # TODO: expire the cache
-    if $users[data.user].nil?
-      puts "Fetching account info: #{data.user}"
-      user_info = chat_author_from_slack_user_id data.user
-      puts "Enhancing account info from hooks"
-
-      hooks['profile_data'].each do |hook|
-        next if $channels[data.channel].nil? || !Gateway.channel_match(hook, $channels[data.channel].name, $server)
-        user_info = Gateway.enhance_profile hook, user_info
-      end
-
-      $users[data.user] = user_info
-      $nicks[user_info.nickname] = user_info.uid
-      puts user_info.inspect
-    end
+    fetch_channel_info data.channel, data.user
+    fetch_user_info hooks, data.channel, data.user
 
     # If the message is a normal message, then there might be occurrences of "<@xxxxxxxx>" in the text, which need to get replaced
     text = data.text
     text.gsub!(/<@([A-Z0-9]+)>/i) do |match|
+      fetch_user_info hooks, data.channel, $1
       if $users[$1]
         "<@#{$1}|#{$users[$1].nickname}>"
       else
-        # Look up user info and store for later
-        info = chat_author_from_slack_user_id $1
-        if info
-          $users[$1] = info
-          $nicks[info.nickname] = info.uid
-          "<@#{$1}|#{info.nickname}>"
-        else
-          match
-        end
+        match
       end
     end
 
