@@ -34,7 +34,14 @@ class Gateway
 
   def self.text_match(hook, text)
     return false if hook['match'].nil? || text.nil?
-    Regexp.new(hook['match']).match(text)
+    match = hook['match']
+    if m=/^\/(.+)\/i$/.match(match)
+      match = m.captures[0]
+      i = true
+    else
+      i = false
+    end
+    Regexp.new(match, i).match(text)
   end
 
   def self.send_to_hook(hook, timestamp, network, server, channel, author, type, content, match)
@@ -57,7 +64,7 @@ class Gateway
       response_url: response_url
     }
 
-    jj params
+    # jj params
 
     HTTParty.post hook['url'], {
       body: params.to_json,

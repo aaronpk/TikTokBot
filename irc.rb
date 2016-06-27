@@ -48,8 +48,8 @@ class IRCAPI < API
     if response.parsed_response.is_a? Hash
       self.handle_response channel, response.parsed_response
     else
-      puts "Hook did not send back a hash:"
-      puts response.inspect
+      # puts "Hook did not send back a hash:"
+      # puts response.inspect
     end
   end
 
@@ -150,7 +150,7 @@ def handle_message(channel, user, text)
 
     if match=Gateway.text_match(hook, text)
       puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
-      puts match.captures.inspect
+      # puts match.captures.inspect
 
       # Post to the hook URL in a separate thread
       Gateway.process do

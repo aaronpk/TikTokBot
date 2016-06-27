@@ -58,7 +58,13 @@ This hook will match every message in the every room the bot is in on the freeno
   - "@freenode"
 ```
 
-This hook will run for every join/part/topic event in the given channels.
+Hooks can use regular expressions to match. By default matches are case sensitive. If you define the regex like the below, then it will use a case insensitive match. This is the only flag accepted.
+
+```
+  match: /foo/i
+```
+
+The below hook will run for every join/part/topic event in the given channels.
 
 ```
   events:
