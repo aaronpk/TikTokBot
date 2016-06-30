@@ -274,3 +274,34 @@ For Slack, the bot can indicate it's typing a message. This only works when sent
   "action": "typing"
 }
 ```
+
+### Slack Attachments
+
+When sending messages to Slack, they can include "attachments". See the [Slack docs](https://api.slack.com/docs/message-attachments) for more information on adding attachments to messages. A simple example of adding an image preview is below.
+
+```json
+{
+  "attachments": [
+    {
+      "fallback": "Fallback text,
+      "title": "Title of attachment",
+      "image_url": "http://example.com/photo.jpg"
+    }
+  ]
+}
+```
+
+### Slack File Uploads
+
+You can upload a file as a response to a webhook or via the bot API. The bot requires that the file to upload is accessible at a URL, and it will download it from the URL and upload it to Slack as a file upload. See the [Slack docs](https://api.slack.com/methods/files.upload) for more details on the parameters. A simple example of uploading a file is below.
+
+```json
+{
+  "channel": "#example",
+  "file": {
+    "title": "Title of the file",
+    "filename": "filename.jpg",
+    "url": "http://example.com/photo.jpg"
+  }
+}
+```

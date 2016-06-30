@@ -1,3 +1,5 @@
+require 'tempfile'
+
 class SlackAPI < API
 
   get '/' do
@@ -25,7 +27,7 @@ class SlackAPI < API
     "ok"
   end
 
-  def self.send_message(channel, content)
+  def self.send_message(channel, content, attachments=nil)
     # Look up the channel name in the mapping table, and convert to channel ID if present
     if !$channel_names[channel].nil?
       channel = $channel_names[channel]
@@ -33,13 +35,30 @@ class SlackAPI < API
       return "unknown channel"
     end
 
-    if match=content.match(/^\/me (.+)/)
+    if !attachments.nil?
+      result = $client.web_client.chat_postMessage channel: channel, text: content, attachments: attachments
+    elsif match=content.match(/^\/me (.+)/)
       result = $client.web_client.chat_meMessage channel: channel, text: match[1]
     else
       result = $client.message channel: channel, text: content
     end
 
     result
+  end
+
+  def self.send_file(channel, file)
+    file['channels'] = channel
+    tmp = Tempfile.new('tmpfile')
+    tmp.binmode
+    response = HTTParty.get file['url']
+    tmp.write response.body
+    tmp.flush
+    file['file'] = Faraday::UploadIO.new tmp.path, 'image/jpeg'
+    file.delete 'url'
+    file.keys.each do |key|
+      file[(key.to_sym rescue key) || key] = file.delete(key)
+    end
+    $client.web_client.files_upload file
   end
 
   def self.send_to_hook(hook, type, ts, channel, user, content, match)
@@ -76,8 +95,14 @@ class SlackAPI < API
       else
         "unknown channel #{channel}"
       end
-    elsif response['content']
-      result = SlackAPI.send_message channel, response['content']
+    elsif response['file']
+      puts "UPLOADING FILE TO SLACK"
+      jj response['file']
+      result = SlackAPI.send_file channel, response['file']
+      return "#{result}: #{channel}" if result != true
+
+    elsif response['content'] || response['attachments']
+      result = SlackAPI.send_message channel, response['content'], response['attachments']
       return "#{result}: #{channel}" if result != true
 
       hooks = Gateway.load_hooks
