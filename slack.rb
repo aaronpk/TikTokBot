@@ -83,7 +83,7 @@ class SlackAPI < API
       hooks = Gateway.load_hooks
       # TODO: the Slack API should be returning a timestamp, but the gem appears to only return "true" after sending a message
       fetch_user_info hooks, channel, $client.self.id
-      handle_message hooks, Time.now.to_f, channel, $client.self.id, response['content']
+      handle_message true, hooks, Time.now.to_f, channel, $client.self.id, response['content']
 
       "sent"
     else
@@ -165,7 +165,7 @@ def fetch_user_info(hooks, channel, user)
   end
 end
 
-def handle_message(hooks, ts, channel, user, text)
+def handle_message(is_bot, hooks, ts, channel, user, text)
   hooks['hooks'].each do |hook|
     # First check if there is a channel restriction on the hook
     next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
@@ -233,7 +233,8 @@ $client.on :message do |data|
       text = "/me #{text}"
     end
 
-    handle_message hooks, data.ts, data.channel, data.user, text
+    is_bot = data.user.uid == $client.self.id
+    handle_message is_bot, hooks, data.ts, data.channel, data.user, text
 
   end
 end

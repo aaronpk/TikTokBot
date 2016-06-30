@@ -44,6 +44,10 @@ class Gateway
     Regexp.new(match, i).match(text)
   end
 
+  def self.selfignore(hook, is_bot)
+    return hook['selfignore'] == true && is_bot
+  end
+
   def self.send_to_hook(hook, timestamp, network, server, channel, author, type, content, match)
     token = JWT.encode({
       :channel => channel.uid,

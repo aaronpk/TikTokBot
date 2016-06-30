@@ -65,7 +65,7 @@ class IRCAPI < API
       "setting topic for #{channel}"
     elsif response['content']
       IRCAPI.send_message channel, response['content']
-      handle_message channel, {nick: $config['irc']['nick'], user: $config['irc']['username'], realname: $config['irc']['username']}, response['content']
+      handle_message true, channel, {nick: $config['irc']['nick'], user: $config['irc']['username'], realname: $config['irc']['username']}, response['content']
       "sent"
     else
       "error"
@@ -136,7 +136,7 @@ def handle_event(event, data, text=nil)
   end
 end
 
-def handle_message(channel, user, text)
+def handle_message(is_bot, channel, user, text)
   chat_channel_from_name channel
 
   hooks = Gateway.load_hooks
@@ -147,6 +147,7 @@ def handle_message(channel, user, text)
 
   hooks['hooks'].each do |hook|
     next if !Gateway.channel_match(hook, channel, $config['irc']['server'])
+    next if Gateway.selfignore hook, is_bot
 
     if match=Gateway.text_match(hook, text)
       puts "Matched hook: #{hook['match']} Posting to #{hook['url']}"
@@ -187,7 +188,8 @@ $client = Cinch::Bot.new do
       text = data.message
     end
 
-    handle_message channel, user_hash_from_irc_user(data.user), text
+    is_bot = data.user.nick == $config['irc']['nick']
+    handle_message is_bot, channel, user_hash_from_irc_user(data.user), text
   end
 
   on :invite do |data, nick|
