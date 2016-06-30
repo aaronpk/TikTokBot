@@ -283,7 +283,7 @@ When sending messages to Slack, they can include "attachments". See the [Slack d
 {
   "attachments": [
     {
-      "fallback": "Fallback text,
+      "fallback": "Fallback text",
       "title": "Title of attachment",
       "image_url": "http://example.com/photo.jpg"
     }
