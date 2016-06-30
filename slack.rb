@@ -169,6 +169,7 @@ def handle_message(is_bot, hooks, ts, channel, user, text)
   hooks['hooks'].each do |hook|
     # First check if there is a channel restriction on the hook
     next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
+    next if Gateway.selfignore hook, is_bot
 
     # Check if the text matched
     if match=Gateway.text_match(hook, text)
@@ -210,10 +211,10 @@ $client.on :message do |data|
     hooks = Gateway.load_hooks
 
     puts "================="
-    puts data.inspect
+    puts "#{data.user} #{data.text}"
 
     fetch_channel_info data.channel, data.user
-    fetch_user_info hooks, data.channel, data.user
+    fetch_user_info hooks, data.channel, data.user if data.user
 
     # If the message is a normal message, then there might be occurrences of "<@xxxxxxxx>" in the text, which need to get replaced
     text = data.text
@@ -233,7 +234,7 @@ $client.on :message do |data|
       text = "/me #{text}"
     end
 
-    is_bot = data.user.uid == $client.self.id
+    is_bot = data.user == $client.self.id
     handle_message is_bot, hooks, data.ts, data.channel, data.user, text
 
   end
