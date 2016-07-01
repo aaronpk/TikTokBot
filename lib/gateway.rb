@@ -11,7 +11,13 @@ class Gateway
   end
 
   def self.load_hooks
-    YAML.load_file 'hooks.yml'
+    hooks = YAML.load_file 'hooks.yml'
+    hooks['hooks'].each do |hook|
+      if hook['channels']
+        hook['channels'].flatten!
+      end
+    end
+    hooks
   end
 
   # Check whether the given hook should be checked based on the channel+server the message is from
@@ -21,7 +27,7 @@ class Gateway
       matched = false
       hook['channels'].each do |check|
         c, s = check.split '@'
-        if s == server and c == channel
+        if s == server and (c == '' || c == channel)
           matched = true
         end
       end

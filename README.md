@@ -42,7 +42,7 @@ Examples:
 
 This hook will match every message in the #example room on the freenode server.
 
-```
+```yaml
   match: ".*"
   url: "http://example.com/log"
   channels:
@@ -51,7 +51,7 @@ This hook will match every message in the #example room on the freenode server.
 
 This hook will match every message in the every room the bot is in on the freenode server.
 
-```
+```yaml
   match: ".*"
   url: "http://example.com/log"
   channels:
@@ -60,13 +60,13 @@ This hook will match every message in the every room the bot is in on the freeno
 
 Hooks can use regular expressions to match. By default matches are case sensitive. If you define the regex like the below, then it will use a case insensitive match. This is the only flag accepted.
 
-```
+```yaml
   match: /foo/i
 ```
 
 The below hook will run for every join/part/topic event in the given channels.
 
-```
+```yaml
   events:
   - join
   - leave
@@ -74,6 +74,26 @@ The below hook will run for every join/part/topic event in the given channels.
   url: "http://example.com/log"
   channels:
   - "#example@freenode"
+```
+
+Because this is YAML, you can define a list of common channel groups and re-use it for hooks. At the top of your file, define your list of channels as demonstrated below, then use it in a hook definition.
+
+```yaml
+group1: &GROUP1
+- "#foo@freenode"
+- "#bar@freenode"
+
+hooks:
+
+- match: "^ping$"
+  channels: *GROUP1
+  url: "http://localhost:8000/ping.php"
+
+- match: "^pong$"
+  channels: 
+  - *GROUP1
+  - "#pong@freenode"
+  url: "http://localhost:8000/pong.php"
 ```
 
 NOTE: Replies from hooks are *also* sent back through the hook matching flow, so be careful not to end up in an infinite loop! This allows you to use a global matching hook to log every event, or to trigger hooks from other hooks. Mainly you should make sure that if you have a broadly matching hook such as `.*` that it doesn't cause the bot to say anything.
