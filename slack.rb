@@ -146,8 +146,8 @@ def chat_channel_from_slack_channel_id(channel_id)
   })
 end
 
-def chat_channel_from_slack_user_id(channel_id)
-  user = $client.web_client.users_info(user: channel_id).user
+def chat_channel_from_slack_user_id(channel_id, user_id)
+  user = $client.web_client.users_info(user: user_id).user
   Bot::Channel.new({
     uid: channel_id,
     name: user.name
@@ -162,7 +162,7 @@ def fetch_channel_info(channel, user)
       puts "Fetching group info: #{data.channel}"
       $channels[channel] = chat_channel_from_slack_group_id channel
     elsif channel[0] == "D"
-      $channels[channel] = chat_channel_from_slack_user_id user
+      $channels[channel] = chat_channel_from_slack_user_id channel, user
       puts "Private message from #{$channels[channel].name}"
     elsif channel[0] == "C"
       puts "Fetching channel info: #{channel}"
