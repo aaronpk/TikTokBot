@@ -10,14 +10,25 @@ class Gateway
     end
   end
 
+  @@hooks = nil
+
   def self.load_hooks
-    hooks = YAML.load_file 'hooks.yml'
-    hooks['hooks'].each do |hook|
-      if hook['channels']
-        hook['channels'].flatten!
+    begin
+      hooks = YAML.load_file 'hooks.yml'
+      hooks['hooks'].each do |hook|
+        if hook['channels']
+          hook['channels'].flatten!
+        end
+      end
+      @@hooks = hooks
+    rescue => e
+      if @@hooks
+        puts "ERROR: Failed to parse hooks.yml, returning cached version: \"#{e.message}\""
+        @@hooks
+      else
+        raise e
       end
     end
-    hooks
   end
 
   # Check whether the given hook should be checked based on the channel+server the message is from
@@ -45,7 +56,7 @@ class Gateway
       match = m.captures[0]
       i = true
     else
-      i = false
+      i = true # always do case insensitive matches
     end
     Regexp.new(match, i).match(text)
   end
