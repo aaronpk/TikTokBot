@@ -295,6 +295,19 @@ For Slack, the bot can indicate it's typing a message. This only works when sent
 }
 ```
 
+### Reactions 
+
+For Slack, the bot can post reactions in response to a message. Provide the timestamp of the message to add the reaction to, and include the emoji name in a property named "emoji".
+
+```json
+{
+  "channel": "#example",
+  "action": "react",
+  "timestamp": "1470083825.000020",
+  "emoji": "smile"
+}
+```
+
 ### Slack Attachments
 
 When sending messages to Slack, they can include "attachments". See the [Slack docs](https://api.slack.com/docs/message-attachments) for more information on adding attachments to messages. A simple example of adding an image preview is below.

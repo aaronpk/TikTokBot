@@ -85,6 +85,9 @@ class SlackAPI < API
     elsif response['action'] == 'leave'
       $client.web_client.channels_leave(name: channel)
       "not allowed"
+    elsif response['action'] == 'react'
+      result = $client.web_client.reactions_add(channel: channel, timestamp: response['timestamp'], name: response['emoji'])
+      puts result
     elsif response['action'] == 'typing'
       $client.typing channel: channel
     elsif response['topic']
