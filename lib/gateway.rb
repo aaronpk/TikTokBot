@@ -65,7 +65,7 @@ class Gateway
     return hook['selfignore'] == true && is_bot
   end
 
-  def self.send_to_hook(hook, timestamp, network, server, channel, author, type, content, match)
+  def self.send_to_hook(hook, timestamp, network, server, channel, author, type, content, match, modes=[])
     token = JWT.encode({
       :channel => channel.uid,
       :exp => (Time.now.to_i + 60*5)  # webhook URLs are valid for 5 minutes
@@ -82,6 +82,7 @@ class Gateway
       author: author.to_hash,
       content: content,
       match: match ? match.captures : nil,
+      modes: modes,
       response_url: response_url
     }
 
