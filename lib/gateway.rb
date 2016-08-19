@@ -135,13 +135,13 @@ class Gateway
 
       # If the user does not specify a channel, "channel" will be nil so there must only be one channel defined for this token
       if channel.nil? 
-        if data['channels'].length == 1
+        if data['channels'] && data['channels'].length == 1
           c,s = data['channels'].first.split '@'
           if s == $server
             return c
           end
         else
-          if data['channels'].length == 0
+          if data['channels'].nil? || data['channels'].length == 0
             return channel
           else
             return false;
