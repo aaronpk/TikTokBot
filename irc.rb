@@ -35,7 +35,7 @@ class IRCAPI < API
     "sent"
   end
 
-  def self.send_to_hook(hook, type, channel, nick, content, match)
+  def self.send_to_hook(hook, type, channel, nick, content, match, modes=[])
     response = Gateway.send_to_hook hook,
       Time.now.to_f,
       'irc',
@@ -44,7 +44,8 @@ class IRCAPI < API
       $nicks[nick],
       type,
       content,
-      match
+      match,
+      modes
     if response.parsed_response.is_a? Hash
       self.handle_response channel, response.parsed_response
     else
@@ -63,9 +64,17 @@ class IRCAPI < API
     elsif response['topic']
       $client.Channel(channel).topic = response['topic']
       "setting topic for #{channel}"
+    elsif response['action'] == 'voice'
+      $client.Channel(channel).voice(response['nick'])
+    elsif response['action'] == 'devoice'
+      $client.Channel(channel).devoice(response['nick'])
     elsif response['content']
       IRCAPI.send_message channel, response['content']
-      handle_message true, channel, {nick: $config['irc']['nick'], user: $config['irc']['username'], realname: $config['irc']['username']}, response['content']
+      handle_message true, channel, {
+        nick: $config['irc']['nick'], 
+        user: $config['irc']['username'], 
+        realname: $config['irc']['username']
+      }, response['content']
       "sent"
     else
       "error"
@@ -136,7 +145,7 @@ def handle_event(event, data, text=nil)
   end
 end
 
-def handle_message(is_bot, channel, user, text)
+def handle_message(is_bot, channel, user, text, modes=[])
   chat_channel_from_name channel
 
   hooks = Gateway.load_hooks
@@ -155,7 +164,7 @@ def handle_message(is_bot, channel, user, text)
 
       # Post to the hook URL in a separate thread
       Gateway.process do
-        IRCAPI.send_to_hook hook, 'message', channel, user[:nick], text, match
+        IRCAPI.send_to_hook hook, 'message', channel, user[:nick], text, match, modes
       end
 
     end
@@ -194,8 +203,12 @@ $client = Cinch::Bot.new do
       text = data.message
     end
 
+    modes = []
+    modes << 'voice' if data.channel.voiced?(data.user)
+    modes << 'op' if data.channel.opped?(data.user)
+
     is_bot = data.user.nick == $config['irc']['nick']
-    handle_message is_bot, channel, user_hash_from_irc_user(data.user), text
+    handle_message is_bot, channel, user_hash_from_irc_user(data.user), text, modes
   end
 
   on :invite do |data, nick|
