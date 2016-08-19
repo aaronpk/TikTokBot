@@ -55,10 +55,10 @@ class IRCAPI < API
 
   def self.handle_response(channel, response)
     if response['action'] == 'join'
-      $client.join(channel)
+      $client.join(response['channel'])
       "joining #{channel}"
     elsif response['action'] == 'leave'
-      $client.part(channel)
+      $client.part(response['channel'])
       "leaving #{channel}"
     elsif response['topic']
       $client.Channel(channel).topic = response['topic']
@@ -169,7 +169,13 @@ $client = Cinch::Bot.new do
   configure do |c|
     c.server = $config['irc']['host']
     c.port = $config['irc']['port']
-    c.password = $config['irc']['password']
+    if $config['irc']['password']
+      c.password = $config['irc']['password']
+    end
+    if $config['irc']['sasl']
+      c.sasl.username = $config['irc']['nick']
+      c.sasl.password = $config['irc']['sasl']
+    end
     if $config['irc']['ssl']
       c.ssl.use = true
     end
