@@ -2,7 +2,7 @@ source 'https://rubygems.org/'
 
 gem 'rake'
 
-gem 'slack-ruby-client', git: 'git@github.com:aaronpk/slack-ruby-client.git'
+gem 'slack-ruby-client', git: 'https://github.com/aaronpk/slack-ruby-client.git'
 gem 'cinch'
 
 gem 'celluloid-io', require: ['celluloid/current', 'celluloid/io']
