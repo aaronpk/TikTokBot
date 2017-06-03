@@ -68,6 +68,8 @@ class IRCAPI < API
       $client.Channel(channel).voice(response['nick'])
     elsif response['action'] == 'devoice'
       $client.Channel(channel).devoice(response['nick'])
+    elsif response['action'] == 'nick'
+      $client.nick = response['nick']
     elsif response['content']
       IRCAPI.send_message channel, response['content']
       handle_message true, channel, {
@@ -204,8 +206,10 @@ $client = Cinch::Bot.new do
     end
 
     modes = []
-    modes << 'voice' if data.channel.voiced?(data.user)
-    modes << 'op' if data.channel.opped?(data.user)
+    if data.channel
+      modes << 'voice' if data.channel.voiced?(data.user)
+      modes << 'op' if data.channel.opped?(data.user)
+    end
 
     is_bot = data.user.nick == $config['irc']['nick']
     handle_message is_bot, channel, user_hash_from_irc_user(data.user), text, modes
