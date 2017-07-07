@@ -3,3 +3,4 @@ tokens.yml
 hooks.yml
 .DS_Store
 vendor/
+.bundle
