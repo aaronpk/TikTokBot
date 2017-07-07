@@ -1,5 +1,5 @@
 GIT
-  remote: git@github.com:aaronpk/slack-ruby-client.git
+  remote: https://github.com/aaronpk/slack-ruby-client.git
   revision: 613dd1f5494e63fabd42f41342a0ce4b83307c1e
   specs:
     slack-ruby-client (0.7.5)
