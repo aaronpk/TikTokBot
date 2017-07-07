@@ -41,7 +41,7 @@ GEM
       timers (>= 4.1.1)
     celluloid-supervision (0.20.5)
       timers (>= 4.1.1)
-    cinch (2.3.2)
+    cinch (2.3.3)
     faraday (0.9.2)
       multipart-post (>= 1.2, < 3)
     faraday_middleware (0.10.0)
@@ -83,7 +83,7 @@ PLATFORMS
 
 DEPENDENCIES
   celluloid-io
-  cinch
+  cinch (= 2.3.3)
   httparty
   jwt
   minitest
