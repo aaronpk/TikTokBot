@@ -4,3 +4,4 @@ hooks.yml
 .DS_Store
 vendor/
 .bundle
+logs/
