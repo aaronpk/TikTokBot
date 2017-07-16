@@ -176,6 +176,8 @@ def fetch_channel_info(channel, user)
 end
 
 def fetch_user_info(hooks, channel, user)
+  return if hooks['profile_data'].nil?
+
   # TODO: expire the cache
   if $users[user].nil?
     puts "Fetching account info: #{user}"

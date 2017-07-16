@@ -103,6 +103,8 @@ def user_hash_from_irc_user(user)
 end
 
 def fetch_user_info(hooks, channel, user)
+  return if hooks['profile_data'].nil?
+
   # Enhance the author info
   # TODO: expire the cache
   if $nicks[user[:nick]].nil?
