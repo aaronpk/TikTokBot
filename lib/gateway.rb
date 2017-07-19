@@ -88,13 +88,23 @@ class Gateway
 
     # jj params
 
-    HTTParty.post hook['url'], {
+    response = HTTParty.post hook['url'], {
       body: params.to_json,
       headers: {
         'Authorization' => "Bearer #{hook['token']}",
         'Content-type' => 'application/json'
       }
     }
+
+    if $config['verbose']
+      puts "Sent to web hook: #{hook['url']}"
+      puts "HTTP response code: #{response.code}"
+      puts "Response body:\n---"
+      puts response.parsed_response
+      puts "---"
+    end
+
+    response
   end
 
   def self.enhance_profile(hook, user_info)
