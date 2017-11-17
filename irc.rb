@@ -109,9 +109,11 @@ def fetch_user_info(hooks, channel, user)
   if $nicks[user[:nick]].nil? || ($nicks_cache[user[:nick]] < (Time.now.to_i - 600))
     user_info = chat_author_from_irc_user user
 
-    hooks['profile_data'].each do |hook|
-      next if !Gateway.channel_match(hook, channel, $config['irc']['server'])
-      user_info = Gateway.enhance_profile hook, user_info
+    if !hooks['profile_data'].nil?
+      hooks['profile_data'].each do |hook|
+        next if !Gateway.channel_match(hook, channel, $config['irc']['server'])
+        user_info = Gateway.enhance_profile hook, user_info
+      end
     end
 
     $nicks[user[:nick]] = user_info

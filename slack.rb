@@ -182,9 +182,11 @@ def fetch_user_info(hooks, channel, user)
     user_info = chat_author_from_slack_user_id user
     puts "Enhancing account info from hooks"
 
-    hooks['profile_data'].each do |hook|
-      next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
-      user_info = Gateway.enhance_profile hook, user_info
+    if !hooks['profile_data'].nil?
+      hooks['profile_data'].each do |hook|
+        next if $channels[channel].nil? || !Gateway.channel_match(hook, $channels[channel].name, $server)
+        user_info = Gateway.enhance_profile hook, user_info
+      end
     end
 
     $users[user] = user_info
