@@ -13,6 +13,7 @@ class IRCAPI < API
 
   post '/cache/expire' do
     $nicks = {}
+    $nicks_cache = {}
     $channels = {}
     "ok"
   end
@@ -104,8 +105,8 @@ end
 
 def fetch_user_info(hooks, channel, user)
   # Enhance the author info
-  # TODO: expire the cache
-  if $nicks[user[:nick]].nil?
+  # Refresh every 10 minutes
+  if $nicks[user[:nick]].nil? || ($nicks_cache[user[:nick]] < (Time.now.to_i - 600))
     user_info = chat_author_from_irc_user user
 
     hooks['profile_data'].each do |hook|
@@ -114,6 +115,7 @@ def fetch_user_info(hooks, channel, user)
     end
 
     $nicks[user[:nick]] = user_info
+    $nicks_cache[user[:nick]] = Time.now.to_i
   end
 end
 
@@ -175,6 +177,7 @@ end
 
 $channels = {}
 $nicks = {}
+$nicks_cache = {}
 
 $client = Cinch::Bot.new do
   configure do |c|
