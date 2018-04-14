@@ -56,6 +56,10 @@ class IRCAPI < API
   end
 
   def self.handle_response(channel, response)
+    if response['channel']
+      channel = response['channel']
+    end
+    
     if response['action'] == 'join'
       $client.join(response['channel'])
       "joining #{channel}"
@@ -229,6 +233,10 @@ $client = Cinch::Bot.new do
   end
 
   on :part do |data|
+    handle_event 'leave', data
+  end
+
+  on :quit do |data|
     handle_event 'leave', data
   end
 
