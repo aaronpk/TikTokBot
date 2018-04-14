@@ -59,7 +59,7 @@ class IRCAPI < API
     if response['channel']
       channel = response['channel']
     end
-    
+
     if response['action'] == 'join'
       $client.join(response['channel'])
       "joining #{channel}"
@@ -73,13 +73,15 @@ class IRCAPI < API
       $client.Channel(channel).voice(response['nick'])
     elsif response['action'] == 'devoice'
       $client.Channel(channel).devoice(response['nick'])
+    elsif response['action'] == 'kick'
+      $client.Channel(channel).kick(response['nick'])
     elsif response['action'] == 'nick'
       $client.nick = response['nick']
     elsif response['content']
       IRCAPI.send_message channel, response['content']
       handle_message true, channel, {
-        nick: $config['irc']['nick'], 
-        user: $config['irc']['username'], 
+        nick: $config['irc']['nick'],
+        user: $config['irc']['username'],
         realname: $config['irc']['username']
       }, response['content']
       "sent"
