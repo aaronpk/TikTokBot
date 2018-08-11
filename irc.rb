@@ -74,7 +74,7 @@ class IRCAPI < API
     elsif response['action'] == 'devoice'
       $client.Channel(channel).devoice(response['nick'])
     elsif response['action'] == 'kick'
-      $client.Channel(channel).kick(response['nick'])
+      $client.Channel(channel).kick(response['nick'], response['reason'])
     elsif response['action'] == 'nick'
       $client.nick = response['nick']
     elsif response['content']
@@ -157,8 +157,10 @@ def handle_event(event, data, text=nil)
   end
 end
 
-def handle_message(is_bot, channel, user, text, modes=[])
-  chat_channel_from_name channel
+def handle_message(is_bot, reply_to, user, text, modes=[], channel=nil)
+  channel = reply_to if channel.nil?
+  
+  chat_channel_from_name reply_to
 
   hooks = Gateway.load_hooks
 
@@ -176,7 +178,7 @@ def handle_message(is_bot, channel, user, text, modes=[])
 
       # Post to the hook URL in a separate thread
       Gateway.process do
-        IRCAPI.send_to_hook hook, 'message', channel, user[:nick], text, match, modes
+        IRCAPI.send_to_hook hook, 'message', reply_to, user[:nick], text, match, modes
       end
 
     end
@@ -207,7 +209,12 @@ $client = Cinch::Bot.new do
   end
 
   on :message do |data, nick|
-    channel = data.channel ? data.channel.name : data.user.nick
+    channel = data.channel ? data.channel.name : $config['irc']['nick']
+    reply_to = data.channel ? data.channel.name : data.user.nick
+    
+    if channel != reply_to
+	   puts "Received PM to #{channel} from #{reply_to}" 
+    end
 
     # IRC "/me" lines end up coming through as PRIVMSG "\u0001ACTION waves\u0001"
     if match = data.message.match(/\u0001ACTION (.+)\u0001/)
@@ -223,7 +230,7 @@ $client = Cinch::Bot.new do
     end
 
     is_bot = data.user.nick == $config['irc']['nick']
-    handle_message is_bot, channel, user_hash_from_irc_user(data.user), text, modes
+    handle_message is_bot, reply_to, user_hash_from_irc_user(data.user), text, modes, channel
   end
 
   on :invite do |data, nick|
@@ -238,9 +245,9 @@ $client = Cinch::Bot.new do
     handle_event 'leave', data
   end
 
-  on :quit do |data|
-    handle_event 'leave', data
-  end
+  #on :quit do |data|
+  #  handle_event 'leave', data
+  #end
 
   on :join do |data|
     handle_event 'join', data
