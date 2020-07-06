@@ -69,7 +69,8 @@ module Bot
         photo: @data[:photo],
         url: @data[:url],
         tz: @data[:tz],
-        pronouns: @data[:pronouns].to_hash
+        pronouns: @data[:pronouns].to_hash,
+        host: @data[:host]
       }
       data
     end

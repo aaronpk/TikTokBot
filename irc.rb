@@ -98,6 +98,7 @@ def chat_author_from_irc_user(user)
     nickname: user[:nick],
     username: user[:user],
     name: user[:realname],
+    host: user[:host],
   })
 end
 
@@ -105,7 +106,8 @@ def user_hash_from_irc_user(user)
   {
     nick: user.nick,
     user: user.data[:user],
-    realname: user.data[:realname]
+    realname: user.data[:realname],
+    host: user.host,
   }
 end
 
@@ -180,7 +182,8 @@ def handle_message(is_bot, reply_to, user, text, modes=[], channel=nil)
       Gateway.process do
         IRCAPI.send_to_hook hook, 'message', reply_to, user[:nick], text, match, modes
       end
-
+    else
+      #puts "did not match #{hook['match']}"
     end
   end
 end
